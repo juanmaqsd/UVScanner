@@ -41,12 +41,11 @@ int pasoAtras [4][4] =
   {1, 0, 0, 0}
 };
 
-int vueltas = 0; // Contador de vueltas completas que da el motor
-boolean ok;
-int distancia; // Ancho de la placa.
-int estado = 0; // Da el OK para pasar a la siguiente fase.
-int contador = 0;
-int sentido = 0;
+int vueltas = 0;                              // Contador de vueltas completas que da el motor.
+int distancia;                                // Ancho de la placa.
+int fase = 0;                                 // Indica en qué fase del programa nos encontramos (Búsqueda de límites fase = 0; Barrido automático fase = 1).
+int ok = 0;                                   // Para detectar si es la primera o segunda vez que pulsamos el botón OK.
+int sentido = 0;                              // Sentido en el que debe girar primero el motor.
 
 
 void setup() {
@@ -64,6 +63,8 @@ void setup() {
   pinMode(botonMenos, INPUT);
   pinMode(botonOk, INPUT);
 
+  digitalWrite(13, LOW);                     //El Led 13 se quedaba encendido. Lo apagamos.
+
 }
 
 
@@ -71,7 +72,7 @@ void setup() {
 void loop() {
 
 
-  switch (estado) {
+  switch (fase) {
 
     case 0:                                     //Ajustar los limites de la placa.
       //Hacia delante
@@ -88,27 +89,36 @@ void loop() {
       }
 
       //Validar
-      if (!digitalRead(botonOk)) {
-        if (contador = 0) {
-          vueltas = 0;
-          contador++;
-        }
-        else {
-          if (vueltas < 0) {
-            distancia = abs(vueltas);
+      if (!digitalRead(botonOk)) {      //Primera pulsación del botón OK
+        if (ok == 0) {
+
+          vueltas = 0;                  //Inicializamos el contador vueltas
+          ok++;
+          delay(500);
+
+        } else {                          //Segunda pulsación del botón OK
+
+          if (vueltas < 0) {            //Limites Primero Arriba, luego Abajo
+            vueltas = abs(vueltas);
             sentido = 1;
-            estado = 1;
-          } else {
-            distancia = vueltas;
+          } else {                      //Limites Primero Abajo, luego Arriba
             sentido = 0;
           }
+          delay(500);
+          
+          ok = 0;
+          distancia = vueltas;
+          fase = 1;
+
         }
       }
 
-      delay(500);
+
       break;
 
-    case 1: //Mover leds
+      
+
+    case 1:                             //Barrido con leds UV de la superficie
 
       digitalWrite(Led, HIGH);
       delay(4000);
@@ -116,9 +126,9 @@ void loop() {
       digitalWrite(LedsUV, HIGH);
       delay(1000);
 
-      if (sentido = 0) {
+      if (sentido == 0) {
 
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 15; i++) {
 
           while (vueltas > 0) {
             Atras();
@@ -135,7 +145,7 @@ void loop() {
           delay(500);
         }
       } else {
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 15; i++) {
 
           while (vueltas > 0) {
             Adelante();
@@ -155,9 +165,10 @@ void loop() {
 
       digitalWrite(Led, LOW);
       digitalWrite(LedsUV, LOW);
-      estado = 0;
+      fase = 0;
 
       break;
+
   }
 
 
